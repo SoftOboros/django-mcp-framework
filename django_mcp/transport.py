@@ -27,7 +27,6 @@ from typing import Any
 
 from asgiref.sync import sync_to_async
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 
 from django_mcp.audit import derive_outcome_from_error_code, emit_audit_entry
 from django_mcp.discovery import ensure_discovered
@@ -39,7 +38,6 @@ logger = logging.getLogger(__name__)
 TRANSPORT_LABEL = "streamable-http"
 
 
-@csrf_exempt
 async def mcp_endpoint(request: HttpRequest) -> HttpResponse:
     """The single streamable-HTTP endpoint per DMCP-04 §5.1.
 
@@ -208,6 +206,15 @@ async def mcp_endpoint(request: HttpRequest) -> HttpResponse:
         asyncio.create_task(_touch_last_used(key))
 
     return JsonResponse(response_envelope, status=200)
+
+
+# Equivalent to ``@csrf_exempt`` but preserves the coroutine-function identity:
+# on Django < 5.1, ``csrf_exempt`` wraps the view in a sync function so
+# ``asyncio.iscoroutinefunction`` returns False and the request handler never
+# awaits the coroutine. Django's CSRF middleware checks this attribute directly
+# (``getattr(callback, "csrf_exempt", False)``), so the scope guarantee of
+# INV-DMCP04-4 is unchanged.
+mcp_endpoint.csrf_exempt = True  # type: ignore[attr-defined]
 
 
 # --- helpers --------------------------------------------------------------
