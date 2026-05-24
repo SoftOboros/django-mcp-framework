@@ -1,9 +1,10 @@
-"""django-mcp — expose Django views and URL patterns as MCP tools.
+"""django-mcp-framework — expose Django views and URL patterns as MCP tools.
 
-This package is pre-alpha; the importable surface lands phase by phase against
-ratified ``docs/concepts/TODO-DMCP-NN-*.md`` documents.
+The package is distributed on PyPI as ``django-mcp-framework`` and imported
+as ``django_mcp``. Discoverable behaviour is governed by the ratified
+``docs/concepts/TODO-DMCP-NN-*.md`` documents.
 """
 
-__version__ = "0.9.0"
+__version__ = "1.0.0"
 
 default_app_config = "django_mcp.apps.DjangoMcpConfig"

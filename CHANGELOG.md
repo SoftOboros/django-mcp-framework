@@ -5,6 +5,53 @@ All notable changes to `django-mcp-framework` are recorded here. Per-phase
 for each spec amendment; this file is the consolidated release-facing
 summary.
 
+## 1.0.0 — 2026-05-23
+
+Production-stable release. No MCP wire-surface or Python API changes
+from 0.9.0; this release promotes the package to 1.0 and activates the
+post-1.0 backwards-compatibility rule from `CLAUDE.md` — breaking
+changes henceforth require migration paths.
+
+### Fixed
+
+- `transport.mcp_endpoint` now preserves coroutine-function identity
+  under Django 4.2 and 5.0 (whose `csrf_exempt` decorator wraps the
+  view in a sync function, breaking `asyncio.iscoroutinefunction` and
+  causing the request handler to dispatch the view as sync and reject
+  the returned coroutine). The view sets `mcp_endpoint.csrf_exempt =
+  True` directly. INV-DMCP04-4 (CSRF exemption scoped to this view
+  only) is unchanged — only the mechanism differs.
+
+### CI
+
+- Test matrix expanded to Python 3.13 against Django 5.2; combinations
+  (3.13, 4.2) and (3.13, 5.0) are excluded because Python 3.13 support
+  landed in Django 5.1.
+- Workflows opt into Node.js 24 for JavaScript actions
+  (`FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`) ahead of the 2026-06-02
+  GitHub Actions runner default flip.
+- Empty YAML `exclude:` mapping in `ci.yml` corrected (the placeholder
+  block with only comments rejected the workflow at parse time).
+
+### Docs
+
+- README gains a Django REST Framework section: import-guard, verb
+  mapping including the PUT/PATCH collapse to one `view.update:` per
+  DMCP-02 §10.1, serializer→JSON Schema derivation, the
+  `permission_classes`-only auth boundary per §8.2 (two-stage: pre-
+  invoke `has_permission` and handler-time `has_object_permission`),
+  the `asyncio.to_thread` ORM-boundary citation (INV-DMCP-1), and the
+  feature-gap list (no `authentication_classes`, no `pagination_class`,
+  no filter backends).
+- README installation surface clarified: distributed as
+  `django-mcp-framework` on PyPI, imported in Python as `django_mcp`.
+
+### Classifiers
+
+- `Development Status` flipped from `4 - Beta` to `5 - Production/Stable`.
+- `Framework :: Django :: 5.2` and `Programming Language :: Python ::
+  3.13` added to the trove classifier list.
+
 ## 0.9.0 — 2026-05-23
 
 Initial release. Feature-complete pre-1.0 cut.

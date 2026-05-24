@@ -1,14 +1,19 @@
-# django-mcp
+# django-mcp-framework
 
 Expose a Django project's registered views and URL patterns as Model Context
 Protocol (MCP) tools and resources — the same way Django's admin and CRUD
 machinery falls out of registered models.
 
+Distributed on PyPI as **`django-mcp-framework`**; imported in Python as
+**`django_mcp`** (mirroring the `django-rest-framework` / `rest_framework`
+precedent).
+
 ## Status
 
-**Pre-1.0, feature-complete.** All four phases ratified and implemented; 105
-tests pass across the surface. Per [`CLAUDE.md`](CLAUDE.md), the
-"no backwards-compat shims" rule remains in effect until a v1.0 cut.
+**1.0 — production-stable.** All four phases ratified and implemented; 105
+tests pass across the surface (Python 3.11–3.13 × Django 4.2 / 5.0 / 5.2).
+Per [`CLAUDE.md`](CLAUDE.md), the post-1.0 backwards-compatibility rule is
+now in effect: breaking changes require migration paths.
 
 | Phase | Scope | Concepts doc | Ratified? |
 |-------|-------|--------------|-----------|
@@ -18,10 +23,15 @@ tests pass across the surface. Per [`CLAUDE.md`](CLAUDE.md), the
 | DMCP-03 | Resources and prompts (URI-addressable model bodies, admin-action prompts) | [`docs/concepts/TODO-DMCP-03-RESOURCES-PROMPTS.md`](docs/concepts/TODO-DMCP-03-RESOURCES-PROMPTS.md) | **2026-05-23** |
 | DMCP-04 | Transport (streamable HTTP + STDIO + MCPAPIKey + audit) | [`docs/concepts/TODO-DMCP-04-TRANSPORT.md`](docs/concepts/TODO-DMCP-04-TRANSPORT.md) | **2026-05-23** |
 
-A conforming `django-mcp` deployment satisfies the acceptance gates listed in
-each ratified phase's §12. Optional phases yield a second conformance level.
+A conforming `django-mcp-framework` deployment satisfies the acceptance gates
+listed in each ratified phase's §12. Optional phases yield a second
+conformance level.
 
 ## Quick start
+
+```sh
+pip install django-mcp-framework
+```
 
 ```python
 # settings.py
