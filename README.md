@@ -1,12 +1,45 @@
 # django-mcp-framework
 
-Expose a Django project's registered views and URL patterns as Model Context
-Protocol (MCP) tools and resources — the same way Django's admin and CRUD
-machinery falls out of registered models.
+**Batteries-included MCP for Django.** Expose a Django project's admin,
+views, and DRF API as Model Context Protocol tools, resources, and
+prompts — auto-derived from what Django already knows about your
+project. If it's registered, it surfaces; no per-tool decorators.
 
-Distributed on PyPI as **`django-mcp-framework`**; imported in Python as
-**`django_mcp`** (mirroring the `django-rest-framework` / `rest_framework`
-precedent).
+Named in homage to
+[`djangorestframework`](https://www.django-rest-framework.org/) — the
+*framework* here means **opinionated and batteries-included**, not "a
+toolkit for building your own MCP server." Distributed on PyPI as
+**`django-mcp-framework`**; imported in Python as **`django_mcp`**
+(mirroring the `djangorestframework` / `rest_framework` precedent).
+
+### Three derivation surfaces
+
+1. **Admin** — every `ModelAdmin` becomes a CRUD tool set plus one tool
+   per `@admin.action`. `list_display`, `search_fields`, `list_filter`,
+   `fieldsets`, and `has_*_permission` all participate. `ModelAdmin` is
+   the richest schema source Django ships — already encoding display
+   columns, search vectors, filter facets, permission gates, and admin
+   actions — and this package's first job is to project it mechanically
+   into the MCP wire surface.
+2. **Views** — every FBV, CBV, and DRF ViewSet in `ROOT_URLCONF`. CBV
+   method sets are introspected for verb narrowing (a `get`-only
+   `DetailView` → `view.retrieve:`, `ListView` → `view.list:`); FBV
+   decorator chains *and* closure cells are walked to detect
+   `@login_required` and `@permission_required` even when
+   `functools.wraps` has masked the qualname; DRF ViewSets honor
+   `permission_classes` and collapse PUT + PATCH to one `view.update:`
+   tool per DMCP-02 §10.1.
+3. **Resources & prompts** — every admin-registered model becomes a
+   URI-addressable resource template (`django-mcp://model/…`); every
+   `FileField` / `ImageField` gets its own
+   `django-mcp://field/…/{pk}/<field>` template; every `@admin.action`
+   emits a parallel `prompt.admin.<app>.<Model>.<action>`.
+
+The deliberate posture: **no annotation required**. Registration is the
+signal. If a model is in `admin.site._registry`, if a view is mounted in
+`ROOT_URLCONF`, if a ViewSet is hooked into a DRF router — it surfaces.
+Migration cost from an annotation-driven setup is "delete the
+decorators."
 
 ## Status
 
@@ -89,11 +122,11 @@ cookies / DRF tokens.
 ## Django REST Framework
 
 DRF is supported as a first-class derivation target ([`django_mcp/drf.py`](django_mcp/drf.py),
-DMCP-02 §5.3 / §10.1). Support is **import-guarded** — the module is always
-importable, but emission is a no-op when `rest_framework` isn't installed
-(INV-DMCP02-8). No configuration is required; if DRF is on the path and a
-router is mounted under `ROOT_URLCONF`, the URL walker finds the ViewSets and
-the rule emits tools.
+DMCP-02 §5.3 / §10.1). **No decorators required** — if a ViewSet is mounted
+under a DRF router in `ROOT_URLCONF`, the URL walker finds it and the rule
+emits tools. Support is **import-guarded** (INV-DMCP02-8): the module is
+always importable, and `emit_for_drf_views` is a no-op when
+`rest_framework` isn't installed.
 
 ### Verb mapping
 
@@ -155,6 +188,32 @@ amendment to DMCP-02 §5.3 plus one new invariant.
 
 - **OAuth** — see [`docs/ops/oauth.md`](docs/ops/oauth.md) for the
   OAuth-mints-MCPAPIKey pattern. Works today with zero package changes.
+
+## Roadmap
+
+Post-1.0 the spec-before-code discipline still applies — every item
+below is a phase-shaped candidate, not committed work. Each would land
+as a ratified `docs/concepts/TODO-DMCP-NN-*.md` before any code.
+
+- **DMCP-05 (DRF parity)** — let `pagination_class` and
+  `filter_backends` / `filterset_class` participate at list time.
+  Shape: §15 amendment to DMCP-02 §5.3 plus one new invariant.
+- **Permission predicates in the tool schema** — admin actions and
+  ViewSet `@action`s are effectively state transitions with declared
+  pre/post conditions (permission classes, queryset narrowing, object
+  permissions). Today the auth model is *enforced* at call time via
+  the `auth_check` callable on each `ToolDescriptor` — but the
+  predicate itself is opaque to the agent. Projecting the predicate
+  (`has_change_permission`, the active `permission_classes` set, the
+  `@login_required` gate) into a structured field on the tool's MCP
+  schema would make the auth model **legible** to the model, not just
+  enforced. The mechanical map already exists; the missing piece is
+  the projection.
+- **OAuth bearer pass-through** — let raw OAuth tokens resolve through
+  a pluggable bearer resolver, eliminating the OAuth-mints-MCPAPIKey
+  hop for deployments that prefer to keep credentials in their IdP.
+- **SSE / streaming responses** and **`resources/subscribe`** —
+  deferred pending Django Channels integration.
 
 ## Development
 
