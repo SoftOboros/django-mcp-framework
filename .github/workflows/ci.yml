@@ -12,10 +12,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.11', '3.12']
+        python-version: ['3.11', '3.12', '3.13']
         django-version: ['4.2', '5.0', '5.2']
-        # Django 4.2 supports 3.11/3.12; 5.0 supports 3.10-3.12; 5.2 supports 3.10-3.13.
-        # Matrix as-is is supported across the board, no exclusions needed currently.
+        # Django 4.2 supports 3.10-3.12; 5.0 supports 3.10-3.12; 5.2 supports 3.10-3.13.
+        # Python 3.13 support landed in Django 5.1 — exclude older Django lines.
+        exclude:
+          - python-version: '3.13'
+            django-version: '4.2'
+          - python-version: '3.13'
+            django-version: '5.0'
 
     steps:
       - uses: actions/checkout@v4
