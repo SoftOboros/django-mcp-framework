@@ -6,6 +6,11 @@ on:
   push:
     branches: [main]
 
+# Opt into Node.js 24 for JavaScript actions (Node 20 is deprecated; default
+# flips 2026-06-02). Becomes a no-op once Node 24 is the runner default.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   test:
     runs-on: ubuntu-latest
