@@ -1,0 +1,4 @@
+# Runtime dependencies for django-mcp.
+# Pinned loosely; the authoritative version constraints live in pyproject.toml.
+Django>=4.2,<6.0
+asgiref>=3.7
