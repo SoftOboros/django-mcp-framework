@@ -76,6 +76,71 @@ INV-DMCP01-2, INV-DMCP02-7). MCP authentication uses dedicated
 `MCPAPIKey` credentials (DMCP-04 §6), separate from Django session
 cookies / DRF tokens.
 
+## Django REST Framework
+
+DRF is supported as a first-class derivation target ([`django_mcp/drf.py`](django_mcp/drf.py),
+DMCP-02 §5.3 / §10.1). Support is **import-guarded** — the module is always
+importable, but emission is a no-op when `rest_framework` isn't installed
+(INV-DMCP02-8). No configuration is required; if DRF is on the path and a
+router is mounted under `ROOT_URLCONF`, the URL walker finds the ViewSets and
+the rule emits tools.
+
+### Verb mapping
+
+| DRF handler | MCP tool |
+|---|---|
+| `list` | `view.list:<app>.<View>` |
+| `retrieve` | `view.retrieve:<app>.<View>` |
+| `create` | `view.create:<app>.<View>` |
+| `update` + `partial_update` | one `view.update:<app>.<View>` (collapsed per §10.1, body is `partial=True`) |
+| `destroy` | `view.delete:<app>.<View>` |
+| `@action(detail=…)` | `view.invoke:<app>.<View>.<action>` |
+| Bare `APIView` subclass | one `view.invoke:<app>.<View>` (method dispatched via the `method` argument) |
+
+Router list and detail patterns of one ViewSet coalesce to a single tool set;
+no duplicate emissions. PUT and PATCH collapse to one `view.update:` tool whose
+body schema has every field optional — clients send only the fields they want
+to change.
+
+### Schema derivation
+
+Input/output schemas come from `view.serializer_class` (or `get_serializer_class()`
+when the attribute is absent and the call is safe without a request). The
+walker uses [`drf_serializer_to_json_schema`](django_mcp/schemas.py) to project
+the serializer's declared fields into JSON Schema. Detail-bound tools wrap the
+body schema in `{path: {pk}, body}`; list output uses a fixed
+`{results, count, page, page_size}` envelope.
+
+### Permissions
+
+Only `permission_classes` participate (DMCP-02 §8.2) — `authentication_classes`
+are intentionally bypassed because MCP authentication is owned by `MCPAPIKey`,
+and `request.user` is the artifact DRF permissions see. The gate runs twice:
+once at `auth_check` (pre-invoke, `has_permission` only) and again at
+handler time (`has_permission` + `has_object_permission` once the target
+object has been fetched). Both stages re-synthesise a fresh view instance via
+`build_admin_request`.
+
+### Async / ORM boundary
+
+Every DRF handler wraps its serializer-validation / queryset-evaluation /
+`.save()` work in `asyncio.to_thread(_run)` per INV-DMCP-1. Handlers never
+block the event loop on ORM I/O.
+
+### Known limitations
+
+- `authentication_classes` are not honored; MCP auth is `MCPAPIKey`-only.
+- `pagination_class` is ignored; the list envelope is fixed
+  (`{ordering, page, page_size}` in, `{results, count, page, page_size}` out).
+- `filter_backends` / `filterset_class` are not applied — only the `ordering`
+  argument is honored.
+- DRF renderers / parsers / content negotiation are bypassed; bodies arrive
+  as already-parsed JSON-RPC argument dicts.
+
+A future phase (DMCP-05 candidate) could let `pagination_class` and
+`filter_backends` participate at list time; the shape would be a §15
+amendment to DMCP-02 §5.3 plus one new invariant.
+
 ## Integration recipes
 
 - **OAuth** — see [`docs/ops/oauth.md`](docs/ops/oauth.md) for the
